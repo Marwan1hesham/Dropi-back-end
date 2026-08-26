@@ -20,7 +20,7 @@ class BaseRepository {
             .select(options?.select)
             .populate(options?.populate);
     }
-    async find({ filter, options, projection, }) {
+    async find({ filter, options, projection, } = {}) {
         return this.model
             .find(filter, projection)
             .sort(options?.sort)

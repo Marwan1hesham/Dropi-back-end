@@ -17,13 +17,43 @@ const ProductSchema = new mongoose_1.default.Schema({
         type: Number,
         required: true,
     },
-    image: {
-        type: String,
+    description: String,
+    stock: {
+        type: Number,
         required: true,
     },
+    mainImage: {
+        secure_url: {
+            type: String,
+            required: true,
+        },
+        public_id: {
+            type: String,
+            required: true,
+        },
+    },
+    subImages: [
+        {
+            secure_url: {
+                type: String,
+                required: true,
+            },
+            public_id: {
+                type: String,
+                required: true,
+            },
+        },
+    ],
     discount: {
         type: Number,
     },
+    category: {
+        type: String,
+        required: true,
+    },
+    colors: [String],
+    sizes: [String],
+    isFeatured: Boolean,
     status: {
         type: String,
         enum: product_enum_1.statusEnum,

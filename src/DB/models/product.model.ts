@@ -4,10 +4,16 @@ import { statusEnum } from "../../common/enum/product.enum";
 export interface IProduct {
   name: string;
   price: number;
-  image: string;
+  description: string;
+  mainImage: { secure_url: string; public_id: string };
+  subImages?: { secure_url: string; public_id: string }[];
   discount: number;
   status: string;
+  category: string;
   stock: number;
+  colors: string[];
+  sizes: string[];
+  isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,17 +31,43 @@ const ProductSchema = new mongoose.Schema<IProduct>(
       type: Number,
       required: true,
     },
+    description: String,
     stock: {
       type: Number,
       required: true,
     },
-    image: {
-      type: String,
-      required: true,
+    mainImage: {
+      secure_url: {
+        type: String,
+        required: true,
+      },
+      public_id: {
+        type: String,
+        required: true,
+      },
     },
+    subImages: [
+      {
+        secure_url: {
+          type: String,
+          required: true,
+        },
+        public_id: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
     discount: {
       type: Number,
     },
+    category: {
+      type: String,
+      required: true,
+    },
+    colors: [String],
+    sizes: [String],
+    isFeatured: Boolean,
     status: {
       type: String,
       enum: statusEnum,
