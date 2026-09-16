@@ -1,13 +1,14 @@
 import mongoose from "mongoose";
-import { MONGO_URI } from "../config/config.service";
+import { MONGODB_URI } from "../config/config.service";
 
 export const checkConnectionDB = async () => {
   await mongoose
-    .connect(MONGO_URI!)
+    .connect(MONGODB_URI!)
     .then(() => {
-      console.log("DB Connected successfully");
+      console.log(`Connected to the DB ${MONGODB_URI} successfully`);
     })
-    .catch(() => {
+    .catch((error) => {
       console.log(`Failed to connect to the DB`);
+      console.log(error);
     });
 };

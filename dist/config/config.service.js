@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.API_SECRET = exports.ADMIN_SECRET_KEY = exports.ADMIN_PASSWORD = exports.ADMIN_USERNAME = exports.MONGO_URI = exports.PORT = void 0;
+exports.API_SECRET = exports.ADMIN_SECRET_KEY = exports.ADMIN_PASSWORD = exports.ADMIN_USERNAME = exports.MONGODB_URI = exports.PORT = void 0;
 const node_path_1 = require("node:path");
 const dotenv_1 = require("dotenv");
 const NODE_ENV = process.env.NODE_ENV;
 (0, dotenv_1.config)({ path: (0, node_path_1.resolve)(__dirname, `../../.env.${NODE_ENV}`) });
 exports.PORT = process.env.PORT;
-exports.MONGO_URI = process.env.MONGO_URI;
+exports.MONGODB_URI = process.env.MONGODB_URI;
 exports.ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 exports.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 exports.ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY;

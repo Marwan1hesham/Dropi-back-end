@@ -5,14 +5,27 @@ export interface IProduct {
   name: string;
   price: number;
   description: string;
-  mainImage: { secure_url: string; public_id: string };
-  subImages?: { secure_url: string; public_id: string }[];
   discount: number;
   status: string;
   category: string;
-  stock: number;
-  colors: string[];
-  sizes: string[];
+  colors: {
+    color: string;
+
+    mainImage: {
+      secure_url: string;
+      public_id: string;
+    };
+
+    subImages?: {
+      secure_url: string;
+      public_id: string;
+    }[];
+  }[];
+  variants: {
+    color: string;
+    size: string;
+    stock: number;
+  }[];
   isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -32,32 +45,6 @@ const ProductSchema = new mongoose.Schema<IProduct>(
       required: true,
     },
     description: String,
-    stock: {
-      type: Number,
-      required: true,
-    },
-    mainImage: {
-      secure_url: {
-        type: String,
-        required: true,
-      },
-      public_id: {
-        type: String,
-        required: true,
-      },
-    },
-    subImages: [
-      {
-        secure_url: {
-          type: String,
-          required: true,
-        },
-        public_id: {
-          type: String,
-          required: true,
-        },
-      },
-    ],
     discount: {
       type: Number,
     },
@@ -65,8 +52,30 @@ const ProductSchema = new mongoose.Schema<IProduct>(
       type: String,
       required: true,
     },
-    colors: [String],
-    sizes: [String],
+    colors: [
+      {
+        color: {
+          type: String,
+        },
+        mainImage: {
+          secure_url: { type: String, required: true },
+          public_id: { type: String, required: true },
+        },
+        subImages: [
+          {
+            secure_url: String,
+            public_id: String,
+          },
+        ],
+      },
+    ],
+    variants: [
+      {
+        color: String,
+        size: String,
+        stock: Number,
+      },
+    ],
     isFeatured: Boolean,
     status: {
       type: String,

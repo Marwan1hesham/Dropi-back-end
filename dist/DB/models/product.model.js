@@ -18,32 +18,6 @@ const ProductSchema = new mongoose_1.default.Schema({
         required: true,
     },
     description: String,
-    stock: {
-        type: Number,
-        required: true,
-    },
-    mainImage: {
-        secure_url: {
-            type: String,
-            required: true,
-        },
-        public_id: {
-            type: String,
-            required: true,
-        },
-    },
-    subImages: [
-        {
-            secure_url: {
-                type: String,
-                required: true,
-            },
-            public_id: {
-                type: String,
-                required: true,
-            },
-        },
-    ],
     discount: {
         type: Number,
     },
@@ -51,8 +25,30 @@ const ProductSchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
-    colors: [String],
-    sizes: [String],
+    colors: [
+        {
+            color: {
+                type: String,
+            },
+            mainImage: {
+                secure_url: { type: String, required: true },
+                public_id: { type: String, required: true },
+            },
+            subImages: [
+                {
+                    secure_url: String,
+                    public_id: String,
+                },
+            ],
+        },
+    ],
+    variants: [
+        {
+            color: String,
+            size: String,
+            stock: Number,
+        },
+    ],
     isFeatured: Boolean,
     status: {
         type: String,

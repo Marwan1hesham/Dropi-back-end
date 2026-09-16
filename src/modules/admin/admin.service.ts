@@ -42,54 +42,66 @@ class AdmiService {
       price,
       discount,
       category,
-      stock,
-      colours,
+      variants,
+      colors,
       description,
       isFeatured,
-      colors,
-      sizes,
     } = req.body;
 
-    const files = req.files as {
-      [fieldname: string]: Express.Multer.File[];
-    };
+    price = Number(price);
+    discount = Number(discount);
 
-    const mainImage = files["main-image"]?.[0];
-    const subImages = files["sub-images"] || [];
+    colors = JSON.parse(colors);
+    variants = JSON.parse(variants);
 
-    if (!mainImage) {
-      throw new AppError("Main image is required", 400);
-    }
+    isFeatured = isFeatured === "true";
 
-    const { secure_url, public_id } = await cloudinary.uploader.upload(
-      mainImage.path,
-      {
-        folder: "dropi/main-images",
-      },
+    const files = req.files as Express.Multer.File[];
+
+    const colorsWithImages = await Promise.all(
+      colors.map(async (color: { color: string }, index: number) => {
+        const mainImage = files.find(
+          (file) => file.fieldname === `main-image-${index}`,
+        );
+
+        const subImages = files.filter(
+          (file) => file.fieldname === `sub-images-${index}`,
+        );
+
+        if (!mainImage) {
+          throw new AppError(`Main image is required for ${color.color}`, 400);
+        }
+
+        const mainResult = await cloudinary.uploader.upload(mainImage.path, {
+          folder: `dropi/products/${color.color}/main`,
+        });
+
+        const uploadedSubImages = await Promise.all(
+          subImages.map((file) =>
+            cloudinary.uploader.upload(file.path, {
+              folder: `dropi/products/${color.color}/sub`,
+            }),
+          ),
+        );
+
+        return {
+          color: color.color,
+
+          mainImage: {
+            secure_url: mainResult.secure_url,
+            public_id: mainResult.public_id,
+          },
+
+          subImages: uploadedSubImages.map(({ secure_url, public_id }) => ({
+            secure_url,
+            public_id,
+          })),
+        };
+      }),
     );
 
-    let uploadedSubImages: {
-      secure_url: string;
-      public_id: string;
-    }[] = [];
-
-    if (subImages) {
-      const uploadedImages = await Promise.all(
-        subImages.map((file: Express.Multer.File) =>
-          cloudinary.uploader.upload(file.path, {
-            folder: "dropi/sub-images",
-          }),
-        ),
-      );
-
-      uploadedSubImages = uploadedImages.map(({ secure_url, public_id }) => ({
-        secure_url,
-        public_id,
-      }));
-    }
-
     if (discount) {
-      price = (price * (discount || 0)) / 100;
+      price = price - (price * discount) / 100;
     }
 
     const product = await this._productRepo.create({
@@ -97,16 +109,34 @@ class AdmiService {
       price,
       discount,
       category,
-      stock,
-      mainImage: { secure_url, public_id },
-      subImages: uploadedSubImages,
-      description,
+      variants,
       isFeatured,
-      colors,
-      sizes,
+      colors: colorsWithImages,
+      description,
     });
 
-    res.status(201).json({ message: "Done", data: { product } });
+    return res.status(201).json({
+      message: "Done",
+      data: { product },
+    });
+  };
+
+  getProducts = async (req: Request, res: Response, next: NextFunction) => {
+    const { category, status } = req.query;
+
+    let filter: any = {};
+
+    if (typeof category === "string") {
+      filter.category = category;
+    }
+
+    if (typeof status === "string") {
+      filter.status = status;
+    }
+
+    const products = await this._productRepo.find({ filter });
+
+    return res.status(200).json({ message: "Done", data: products });
   };
 }
 

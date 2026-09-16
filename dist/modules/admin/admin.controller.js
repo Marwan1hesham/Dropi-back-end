@@ -13,8 +13,6 @@ adminRouter.post("/login", admin_service_1.default.login);
 adminRouter.post("/add-product", admin_auth_1.adminAuth, (0, multer_1.default)({
     store_type: multer_enum_1.StoreEnum.disk,
     custom_types: multer_enum_1.multer_types_enum.image,
-}).fields([
-    { name: "main-image", maxCount: 1 },
-    { name: "sub-images", maxCount: 5 },
-]), admin_service_1.default.addProduct);
+}).any(), admin_service_1.default.addProduct);
+adminRouter.get("/get-products", admin_auth_1.adminAuth, admin_service_1.default.getProducts);
 exports.default = adminRouter;

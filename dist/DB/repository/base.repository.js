@@ -5,8 +5,13 @@ class BaseRepository {
     constructor(model) {
         this.model = model;
     }
-    async create(data) {
-        return this.model.create(data);
+    async create(data, session) {
+        const document = new this.model(data);
+        if (session) {
+            document.$session(session);
+        }
+        await document.save();
+        return document;
     }
     async findById(id) {
         return this.model.findById(id);
@@ -37,6 +42,12 @@ class BaseRepository {
     }
     async findOneAndDelete({ filter, options, }) {
         return this.model.findOneAndDelete(filter, options);
+    }
+    async delteOne({ filter }) {
+        return this.model.deleteOne(filter);
+    }
+    async deleteMany({ filter }) {
+        return this.model.deleteMany(filter);
     }
     async paginate({ page, limit, sort, populate, search, }) {
         page = +page || 1;

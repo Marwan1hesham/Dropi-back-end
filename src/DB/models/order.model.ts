@@ -1,4 +1,4 @@
-import mongoose, { Types } from "mongoose";
+import mongoose from "mongoose";
 import { OrderPayMethod, OrderStatusEnum } from "../../common/enum/order.enum";
 
 export interface IOrder {
@@ -9,7 +9,12 @@ export interface IOrder {
   governorate: string;
   address: string;
   comments: string;
-  productsIds: mongoose.Types.ObjectId[];
+  products: {
+    productId: mongoose.Types.ObjectId;
+    color: string;
+    size: string;
+    quantity: number;
+  }[];
   status: string;
   orderNumber: number;
   paymentMethod: string;
@@ -66,11 +71,25 @@ const OrderSchema = new mongoose.Schema<IOrder>(
       type: String,
       enum: OrderStatusEnum,
     },
-    productsIds: [
+    products: [
       {
-        type: mongoose.Types.ObjectId,
-        ref: "Product",
-        required: true,
+        productId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+        color: {
+          type: String,
+          required: true,
+        },
+        size: {
+          type: String,
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
       },
     ],
     orderNumber: {

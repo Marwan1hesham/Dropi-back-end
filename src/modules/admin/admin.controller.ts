@@ -14,11 +14,10 @@ adminRouter.post(
   multerCloud({
     store_type: StoreEnum.disk,
     custom_types: multer_types_enum.image,
-  }).fields([
-    { name: "main-image", maxCount: 1 },
-    { name: "sub-images", maxCount: 5 },
-  ]),
+  }).any(),
   adminService.addProduct,
 );
+
+adminRouter.get("/get-products", adminAuth, adminService.getProducts);
 
 export default adminRouter;

@@ -1,4 +1,5 @@
-import {
+import { options } from "joi";
+import mongoose, {
   HydratedDocument,
   Model,
   PopulateOption,
@@ -12,8 +13,19 @@ import {
 abstract class BaseRepository<TDocument> {
   constructor(protected readonly model: Model<TDocument>) {}
 
-  async create(data: Partial<TDocument>): Promise<HydratedDocument<TDocument>> {
-    return this.model.create(data);
+  async create(
+    data: Partial<TDocument>,
+    session?: mongoose.ClientSession,
+  ): Promise<HydratedDocument<TDocument>> {
+    const document = new this.model(data);
+
+    if (session) {
+      document.$session(session);
+    }
+
+    await document.save();
+
+    return document as HydratedDocument<TDocument>;
   }
 
   async findById(
@@ -90,6 +102,14 @@ abstract class BaseRepository<TDocument> {
     options?: QueryOptions<TDocument>;
   }) {
     return this.model.findOneAndDelete(filter, options);
+  }
+
+  async delteOne({ filter }: { filter: QueryFilter<TDocument> }) {
+    return this.model.deleteOne(filter);
+  }
+
+  async deleteMany({ filter }: { filter: QueryFilter<TDocument> }) {
+    return this.model.deleteMany(filter);
   }
 
   async paginate<T>({

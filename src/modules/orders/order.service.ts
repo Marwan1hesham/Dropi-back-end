@@ -5,14 +5,87 @@ import { OrderRepository } from "../../DB/repository/order.repository";
 import { OrderPayMethod, OrderStatusEnum } from "../../common/enum/order.enum";
 import cloudinary from "../../common/utils/cloudinary";
 import { CounterModel } from "../../DB/models/order.model";
+import { ProductRepository } from "../../DB/repository/product.repository";
+import mongoose from "mongoose";
 
 class OrderService {
   private readonly _orderRepo = new OrderRepository();
+  private readonly _productRepo = new ProductRepository();
 
   constructor() {}
 
+  // placeOrder = async (req: Request, res: Response, next: NextFunction) => {
+
+  //   const {
+  //     firstName,
+  //     lastName,
+  //     phone,
+  //     email,
+  //     governorate,
+  //     address,
+  //     comments,
+  //     paymentMethod,
+  //     products,
+  //   } = req.body;
+
+  //   let status = "";
+  //   if (paymentMethod === OrderPayMethod.online) {
+  //     status = OrderStatusEnum.pending;
+
+  //     if (!req.file) {
+  //       throw new AppError("Payment screenshot is required", 404);
+  //     }
+  //   } else {
+  //     status = OrderStatusEnum.paid;
+  //   }
+
+  //   let imgResult = {};
+  //   if (req.file) {
+  //     imgResult = await cloudinary.uploader.upload(req.file?.path!, {
+  //       folder: `/orders/${email}`,
+  //     });
+
+  //     if (paymentMethod === OrderPayMethod.cash) {
+  //       throw new AppError("Cannot send a screenshot while paying cash");
+  //     }
+  //   }
+
+  //   const { secure_url, public_id } = imgResult as {
+  //     secure_url: string;
+  //     public_id: string;
+  //   };
+
+  //   const counter = await CounterModel.findOneAndUpdate(
+  //     { _id: "order" },
+  //     { $inc: { sequence: 1 } },
+  //     {
+  //       new: true,
+  //       upsert: true,
+  //     },
+  //   );
+
+  //   const orderNumber = counter.sequence;
+
+  //   const order = await this._orderRepo.create({
+  //     firstName,
+  //     lastName,
+  //     phone,
+  //     email,
+  //     governorate,
+  //     address,
+  //     status,
+  //     comments,
+  //     paymentMethod,
+  //     paymentScreenshot: { secure_url, public_id },
+  //     products,
+  //     orderNumber,
+  //   });
+
+  //   return res.status(201).json({ message: "Done", data: order });
+  // };
+
   placeOrder = async (req: Request, res: Response, next: NextFunction) => {
-    const {
+    let {
       firstName,
       lastName,
       phone,
@@ -21,10 +94,13 @@ class OrderService {
       address,
       comments,
       paymentMethod,
-      productsIds,
+      products,
     } = req.body;
 
+    products = JSON.parse(products);
+
     let status = "";
+
     if (paymentMethod === OrderPayMethod.online) {
       status = OrderStatusEnum.pending;
 
@@ -35,49 +111,114 @@ class OrderService {
       status = OrderStatusEnum.paid;
     }
 
-    let result = {};
-    if (req.file) {
-      result = await cloudinary.uploader.upload(req.file?.path!, {
-        folder: `/orders/${email}`,
-      });
+    let imgResult = {};
 
-      if (paymentMethod === OrderPayMethod.cash) {
-        throw new AppError("Cannot send a screenshot while paying cash");
-      }
+    if (paymentMethod === OrderPayMethod.cash && req.file) {
+      throw new AppError("Cannot send a screenshot while paying cash", 400);
     }
 
-    const { secure_url, public_id } = result as {
+    if (req.file) {
+      imgResult = await cloudinary.uploader.upload(req.file.path, {
+        folder: `/orders/${email}`,
+      });
+    }
+
+    const { secure_url, public_id } = imgResult as {
       secure_url: string;
       public_id: string;
     };
 
-    const counter = await CounterModel.findOneAndUpdate(
-      { _id: "order" },
-      { $inc: { sequence: 1 } },
-      {
-        new: true,
-        upsert: true,
-      },
-    );
+    // Stock Management
 
-    const orderNumber = counter.sequence;
+    const session = await mongoose.startSession();
 
-    const order = await this._orderRepo.create({
-      firstName,
-      lastName,
-      phone,
-      email,
-      governorate,
-      address,
-      status,
-      comments,
-      paymentMethod,
-      paymentScreenshot: { secure_url, public_id },
-      productsIds,
-      orderNumber,
-    });
+    try {
+      session.startTransaction();
 
-    return res.status(201).json({ message: "Done", data: order });
+      // Stock Management
+      for (const item of products) {
+        const { productId, color, size, quantity } = item;
+
+        const product = await this._productRepo.findOneAndUpdate({
+          filter: {
+            _id: productId,
+
+            variants: {
+              $elemMatch: {
+                color,
+                size,
+                stock: { $gte: quantity },
+              },
+            },
+          },
+
+          update: {
+            $inc: {
+              "variants.$.stock": -quantity,
+            },
+          },
+
+          options: {
+            new: true,
+            session,
+          },
+        });
+
+        if (!product) {
+          throw new AppError(`Not enough stock for ${color} - ${size}`, 400);
+        }
+      }
+
+      const counter = await CounterModel.findOneAndUpdate(
+        { _id: "order" },
+        { $inc: { sequence: 1 } },
+        {
+          new: true,
+          upsert: true,
+          session,
+        },
+      );
+
+      const orderNumber = counter.sequence;
+
+      const order = await this._orderRepo.create(
+        {
+          firstName,
+          lastName,
+          phone,
+          email,
+          governorate,
+          address,
+          status,
+          comments,
+          paymentMethod,
+
+          ...(req.file && {
+            paymentScreenshot: {
+              secure_url,
+              public_id,
+            },
+          }),
+
+          products,
+          orderNumber,
+        },
+        session,
+      );
+
+      await session.commitTransaction();
+
+      return res.status(201).json({
+        message: "Done",
+        data: order,
+      });
+    } catch (error) {
+      await session.abortTransaction();
+
+      throw error;
+    } finally {
+      await session.endSession();
+    }
   };
 }
 

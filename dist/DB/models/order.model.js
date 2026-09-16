@@ -53,11 +53,25 @@ const OrderSchema = new mongoose_1.default.Schema({
         type: String,
         enum: order_enum_1.OrderStatusEnum,
     },
-    productsIds: [
+    products: [
         {
-            type: mongoose_1.default.Types.ObjectId,
-            ref: "Product",
-            required: true,
+            productId: {
+                type: mongoose_1.default.Schema.Types.ObjectId,
+                ref: "Product",
+                required: true,
+            },
+            color: {
+                type: String,
+                required: true,
+            },
+            size: {
+                type: String,
+                required: true,
+            },
+            quantity: {
+                type: Number,
+                required: true,
+            },
         },
     ],
     orderNumber: {
