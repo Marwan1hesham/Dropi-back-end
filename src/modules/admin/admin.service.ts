@@ -9,9 +9,12 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { ProductRepository } from "../../DB/repository/product.repository";
 import cloudinary from "../../common/utils/cloudinary";
+import { OrderStatusEnum } from "../../common/enum/order.enum";
+import { OrderRepository } from "../../DB/repository/order.repository";
 
 class AdmiService {
   private readonly _productRepo = new ProductRepository();
+  private readonly _orderRepo = new OrderRepository();
 
   constructor() {}
 
@@ -100,10 +103,6 @@ class AdmiService {
       }),
     );
 
-    if (discount) {
-      price = price - (price * discount) / 100;
-    }
-
     const product = await this._productRepo.create({
       name,
       price,
@@ -137,6 +136,124 @@ class AdmiService {
     const products = await this._productRepo.find({ filter });
 
     return res.status(200).json({ message: "Done", data: products });
+  };
+
+  updateProduct = async (req: Request, res: Response, next: NextFunction) => {
+    const { productId } = req.body;
+
+    const allowedFields = [
+      "name",
+      "price",
+      "discount",
+      "description",
+      "status",
+      "category",
+      "colors",
+      "variants",
+      "isFeatured",
+    ];
+
+    const updateData: Record<string, any> = {};
+
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    }
+
+    const updatedProduct = await this._productRepo.findOneAndUpdate({
+      filter: { productId },
+      update: updateData,
+    });
+
+    return res.status(200).json({ message: "Done", data: updatedProduct });
+  };
+
+  deleteProduct = async (req: Request, res: Response, next: NextFunction) => {
+    const { productId } = req.params;
+
+    if (!productId) {
+      throw new AppError("Product ID not found", 404);
+    }
+
+    const deletedProduct = await this._productRepo.findOneAndDelete({
+      filter: { _id: productId },
+    });
+
+    if (!deletedProduct) {
+      throw new AppError("Product not found", 400);
+    }
+
+    return res.status(200).json({ message: "Done", data: deletedProduct });
+  };
+
+  getOrders = async (req: Request, res: Response, next: NextFunction) => {
+    const { status } = req.query;
+
+    let orders: any;
+
+    if (
+      status === OrderStatusEnum.paid ||
+      status === OrderStatusEnum.cancelled ||
+      status === OrderStatusEnum.pending
+    ) {
+      orders = await this._orderRepo.find({
+        filter: { status },
+      });
+    }
+
+    if (!status) {
+      orders = await this._orderRepo.find();
+    }
+
+    return res.status(200).json({ message: "Done", data: orders });
+  };
+
+  updateOrderStatus = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const { status } = req.body;
+    const { orderId } = req.params;
+
+    if (!orderId) {
+      throw new AppError("Order ID not found", 404);
+    }
+
+    const updatedOrder = await this._orderRepo.findOneAndUpdate({
+      filter: { _id: orderId },
+      update: { status },
+      options: { new: true },
+    });
+
+    if (!status) {
+      throw new AppError("A status should be selected", 404);
+    }
+
+    if (!updatedOrder) {
+      throw new AppError("Order not found");
+    }
+
+    res.status(200).json({ message: "Done", data: updatedOrder });
+  };
+
+  deleteOrder = async (req: Request, res: Response, next: NextFunction) => {
+    const { orderId } = req.params;
+
+    if (!orderId) {
+      throw new AppError("Order ID not found", 404);
+    }
+
+    const deletedOrder = await this._orderRepo.findOneAndDelete({
+      filter: { _id: orderId },
+    });
+
+    if (!deletedOrder) {
+      throw new AppError("Order not found", 400);
+    }
+
+    return res.status(200).json({ message: "Done", data: deletedOrder });
   };
 }
 

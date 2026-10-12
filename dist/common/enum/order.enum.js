@@ -5,7 +5,7 @@ var OrderStatusEnum;
 (function (OrderStatusEnum) {
     OrderStatusEnum["pending"] = "pending";
     OrderStatusEnum["paid"] = "paid";
-    OrderStatusEnum["canceled"] = "canceled";
+    OrderStatusEnum["cancelled"] = "cancelled";
 })(OrderStatusEnum || (exports.OrderStatusEnum = OrderStatusEnum = {}));
 var OrderPayMethod;
 (function (OrderPayMethod) {

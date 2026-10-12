@@ -93,29 +93,16 @@ class OrderService {
       governorate,
       address,
       comments,
-      paymentMethod,
       products,
     } = req.body;
 
     products = JSON.parse(products);
 
-    let status = "";
-
-    if (paymentMethod === OrderPayMethod.online) {
-      status = OrderStatusEnum.pending;
-
-      if (!req.file) {
-        throw new AppError("Payment screenshot is required", 404);
-      }
-    } else {
-      status = OrderStatusEnum.paid;
+    if (!req.file) {
+      throw new AppError("Payment screenshot is required", 404);
     }
 
     let imgResult = {};
-
-    if (paymentMethod === OrderPayMethod.cash && req.file) {
-      throw new AppError("Cannot send a screenshot while paying cash", 400);
-    }
 
     if (req.file) {
       imgResult = await cloudinary.uploader.upload(req.file.path, {
@@ -135,9 +122,12 @@ class OrderService {
     try {
       session.startTransaction();
 
+      let total: number = 0;
       // Stock Management
       for (const item of products) {
-        const { productId, color, size, quantity } = item;
+        const { productId, color, size, quantity, price, productImage } = item;
+
+        total += price;
 
         const product = await this._productRepo.findOneAndUpdate({
           filter: {
@@ -181,6 +171,8 @@ class OrderService {
 
       const orderNumber = counter.sequence;
 
+      const status = OrderStatusEnum.pending;
+
       const order = await this._orderRepo.create(
         {
           firstName,
@@ -191,7 +183,7 @@ class OrderService {
           address,
           status,
           comments,
-          paymentMethod,
+          total,
 
           ...(req.file && {
             paymentScreenshot: {

@@ -9,8 +9,11 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const product_repository_1 = require("../../DB/repository/product.repository");
 const cloudinary_1 = __importDefault(require("../../common/utils/cloudinary"));
+const order_enum_1 = require("../../common/enum/order.enum");
+const order_repository_1 = require("../../DB/repository/order.repository");
 class AdmiService {
     _productRepo = new product_repository_1.ProductRepository();
+    _orderRepo = new order_repository_1.OrderRepository();
     constructor() { }
     login = async (req, res, next) => {
         const { username, password } = req.body;
@@ -55,9 +58,6 @@ class AdmiService {
                 })),
             };
         }));
-        if (discount) {
-            price = price - (price * discount) / 100;
-        }
         const product = await this._productRepo.create({
             name,
             price,
@@ -84,6 +84,91 @@ class AdmiService {
         }
         const products = await this._productRepo.find({ filter });
         return res.status(200).json({ message: "Done", data: products });
+    };
+    updateProduct = async (req, res, next) => {
+        const { productId } = req.body;
+        const allowedFields = [
+            "name",
+            "price",
+            "discount",
+            "description",
+            "status",
+            "category",
+            "colors",
+            "variants",
+            "isFeatured",
+        ];
+        const updateData = {};
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updateData[field] = req.body[field];
+            }
+        }
+        const updatedProduct = await this._productRepo.findOneAndUpdate({
+            filter: { productId },
+            update: updateData,
+        });
+        return res.status(200).json({ message: "Done", data: updatedProduct });
+    };
+    deleteProduct = async (req, res, next) => {
+        const { productId } = req.params;
+        if (!productId) {
+            throw new global_error_handler_1.AppError("Product ID not found", 404);
+        }
+        const deletedProduct = await this._productRepo.findOneAndDelete({
+            filter: { _id: productId },
+        });
+        if (!deletedProduct) {
+            throw new global_error_handler_1.AppError("Product not found", 400);
+        }
+        return res.status(200).json({ message: "Done", data: deletedProduct });
+    };
+    getOrders = async (req, res, next) => {
+        const { status } = req.query;
+        let orders;
+        if (status === order_enum_1.OrderStatusEnum.paid ||
+            status === order_enum_1.OrderStatusEnum.cancelled ||
+            status === order_enum_1.OrderStatusEnum.pending) {
+            orders = await this._orderRepo.find({
+                filter: { status },
+            });
+        }
+        if (!status) {
+            orders = await this._orderRepo.find();
+        }
+        return res.status(200).json({ message: "Done", data: orders });
+    };
+    updateOrderStatus = async (req, res, next) => {
+        const { status } = req.body;
+        const { orderId } = req.params;
+        if (!orderId) {
+            throw new global_error_handler_1.AppError("Order ID not found", 404);
+        }
+        const updatedOrder = await this._orderRepo.findOneAndUpdate({
+            filter: { _id: orderId },
+            update: { status },
+            options: { new: true },
+        });
+        if (!status) {
+            throw new global_error_handler_1.AppError("A status should be selected", 404);
+        }
+        if (!updatedOrder) {
+            throw new global_error_handler_1.AppError("Order not found");
+        }
+        res.status(200).json({ message: "Done", data: updatedOrder });
+    };
+    deleteOrder = async (req, res, next) => {
+        const { orderId } = req.params;
+        if (!orderId) {
+            throw new global_error_handler_1.AppError("Order ID not found", 404);
+        }
+        const deletedOrder = await this._orderRepo.findOneAndDelete({
+            filter: { _id: orderId },
+        });
+        if (!deletedOrder) {
+            throw new global_error_handler_1.AppError("Order not found", 400);
+        }
+        return res.status(200).json({ message: "Done", data: deletedOrder });
     };
 }
 exports.default = new AdmiService();

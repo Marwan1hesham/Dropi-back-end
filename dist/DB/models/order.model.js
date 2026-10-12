@@ -53,12 +53,20 @@ const OrderSchema = new mongoose_1.default.Schema({
         type: String,
         enum: order_enum_1.OrderStatusEnum,
     },
+    total: {
+        type: Number,
+        required: true,
+    },
     products: [
         {
             productId: {
                 type: mongoose_1.default.Schema.Types.ObjectId,
                 ref: "Product",
                 required: true,
+            },
+            productImage: {
+                secure_url: { type: String, required: true },
+                public_id: { type: String, required: true },
             },
             color: {
                 type: String,
@@ -72,19 +80,19 @@ const OrderSchema = new mongoose_1.default.Schema({
                 type: Number,
                 required: true,
             },
+            price: {
+                type: Number,
+                required: true,
+            },
         },
     ],
     orderNumber: {
         type: Number,
         required: true,
     },
-    paymentMethod: {
-        type: String,
-        enum: order_enum_1.OrderPayMethod,
-    },
     paymentScreenshot: {
-        secure_url: String,
-        public_id: String,
+        secure_url: { type: String, required: true },
+        public_id: { type: String, required: true },
     },
 }, {
     timestamps: true,

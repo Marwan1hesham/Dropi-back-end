@@ -15,4 +15,9 @@ adminRouter.post("/add-product", admin_auth_1.adminAuth, (0, multer_1.default)({
     custom_types: multer_enum_1.multer_types_enum.image,
 }).any(), admin_service_1.default.addProduct);
 adminRouter.get("/get-products", admin_auth_1.adminAuth, admin_service_1.default.getProducts);
+adminRouter.patch("/update-product", admin_auth_1.adminAuth, admin_service_1.default.updateProduct);
+adminRouter.delete("/delete-product/:productId", admin_auth_1.adminAuth, admin_service_1.default.deleteProduct);
+adminRouter.get("/get-orders", admin_auth_1.adminAuth, admin_service_1.default.getOrders);
+adminRouter.patch("/update-order/:orderId", admin_auth_1.adminAuth, admin_service_1.default.updateOrderStatus);
+adminRouter.delete("/delete-order/:orderId", admin_auth_1.adminAuth, admin_service_1.default.deleteOrder);
 exports.default = adminRouter;

@@ -20,4 +20,26 @@ adminRouter.post(
 
 adminRouter.get("/get-products", adminAuth, adminService.getProducts);
 
+adminRouter.patch("/update-product", adminAuth, adminService.updateProduct);
+
+adminRouter.delete(
+  "/delete-product/:productId",
+  adminAuth,
+  adminService.deleteProduct,
+);
+
+adminRouter.get("/get-orders", adminAuth, adminService.getOrders);
+
+adminRouter.patch(
+  "/update-order/:orderId",
+  adminAuth,
+  adminService.updateOrderStatus,
+);
+
+adminRouter.delete(
+  "/delete-order/:orderId",
+  adminAuth,
+  adminService.deleteOrder,
+);
+
 export default adminRouter;

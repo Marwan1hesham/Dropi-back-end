@@ -74,22 +74,12 @@ class OrderService {
     //   return res.status(201).json({ message: "Done", data: order });
     // };
     placeOrder = async (req, res, next) => {
-        let { firstName, lastName, phone, email, governorate, address, comments, paymentMethod, products, } = req.body;
+        let { firstName, lastName, phone, email, governorate, address, comments, products, } = req.body;
         products = JSON.parse(products);
-        let status = "";
-        if (paymentMethod === order_enum_1.OrderPayMethod.online) {
-            status = order_enum_1.OrderStatusEnum.pending;
-            if (!req.file) {
-                throw new global_error_handler_1.AppError("Payment screenshot is required", 404);
-            }
-        }
-        else {
-            status = order_enum_1.OrderStatusEnum.paid;
+        if (!req.file) {
+            throw new global_error_handler_1.AppError("Payment screenshot is required", 404);
         }
         let imgResult = {};
-        if (paymentMethod === order_enum_1.OrderPayMethod.cash && req.file) {
-            throw new global_error_handler_1.AppError("Cannot send a screenshot while paying cash", 400);
-        }
         if (req.file) {
             imgResult = await cloudinary_1.default.uploader.upload(req.file.path, {
                 folder: `/orders/${email}`,
@@ -100,9 +90,11 @@ class OrderService {
         const session = await mongoose_1.default.startSession();
         try {
             session.startTransaction();
+            let total = 0;
             // Stock Management
             for (const item of products) {
-                const { productId, color, size, quantity } = item;
+                const { productId, color, size, quantity, price, productImage } = item;
+                total += price;
                 const product = await this._productRepo.findOneAndUpdate({
                     filter: {
                         _id: productId,
@@ -134,6 +126,7 @@ class OrderService {
                 session,
             });
             const orderNumber = counter.sequence;
+            const status = order_enum_1.OrderStatusEnum.pending;
             const order = await this._orderRepo.create({
                 firstName,
                 lastName,
@@ -143,7 +136,7 @@ class OrderService {
                 address,
                 status,
                 comments,
-                paymentMethod,
+                total,
                 ...(req.file && {
                     paymentScreenshot: {
                         secure_url,

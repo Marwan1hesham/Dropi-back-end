@@ -11,14 +11,16 @@ export interface IOrder {
   comments: string;
   products: {
     productId: mongoose.Types.ObjectId;
+    productImage: { secure_url: string; public_id: string };
     color: string;
     size: string;
     quantity: number;
+    price: number;
   }[];
+  total: number;
   status: string;
   orderNumber: number;
-  paymentMethod: string;
-  paymentScreenshot?: { secure_url: string; public_id: string };
+  paymentScreenshot: { secure_url: string; public_id: string };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,12 +73,20 @@ const OrderSchema = new mongoose.Schema<IOrder>(
       type: String,
       enum: OrderStatusEnum,
     },
+    total: {
+      type: Number,
+      required: true,
+    },
     products: [
       {
         productId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
           required: true,
+        },
+        productImage: {
+          secure_url: { type: String, required: true },
+          public_id: { type: String, required: true },
         },
         color: {
           type: String,
@@ -90,19 +100,19 @@ const OrderSchema = new mongoose.Schema<IOrder>(
           type: Number,
           required: true,
         },
+        price: {
+          type: Number,
+          required: true,
+        },
       },
     ],
     orderNumber: {
       type: Number,
       required: true,
     },
-    paymentMethod: {
-      type: String,
-      enum: OrderPayMethod,
-    },
     paymentScreenshot: {
-      secure_url: String,
-      public_id: String,
+      secure_url: { type: String, required: true },
+      public_id: { type: String, required: true },
     },
   },
   {
