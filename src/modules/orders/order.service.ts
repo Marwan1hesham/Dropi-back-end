@@ -7,6 +7,7 @@ import cloudinary from "../../common/utils/cloudinary";
 import { CounterModel } from "../../DB/models/order.model";
 import { ProductRepository } from "../../DB/repository/product.repository";
 import mongoose from "mongoose";
+import { unlink } from "node:fs/promises";
 
 class OrderService {
   private readonly _orderRepo = new OrderRepository();
@@ -102,11 +103,15 @@ class OrderService {
       throw new AppError("Payment screenshot is required", 404);
     }
 
-    let imgResult = {};
+    let imgResult;
 
-    if (req.file) {
+    try {
       imgResult = await cloudinary.uploader.upload(req.file.path, {
         folder: `/orders/${email}`,
+      });
+    } finally {
+      await unlink(req.file.path).catch((err) => {
+        console.error("Failed to delete temporary screenshot:", err);
       });
     }
 

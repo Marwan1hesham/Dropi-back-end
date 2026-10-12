@@ -10,6 +10,7 @@ const cloudinary_1 = __importDefault(require("../../common/utils/cloudinary"));
 const order_model_1 = require("../../DB/models/order.model");
 const product_repository_1 = require("../../DB/repository/product.repository");
 const mongoose_1 = __importDefault(require("mongoose"));
+const promises_1 = require("node:fs/promises");
 class OrderService {
     _orderRepo = new order_repository_1.OrderRepository();
     _productRepo = new product_repository_1.ProductRepository();
@@ -79,10 +80,15 @@ class OrderService {
         if (!req.file) {
             throw new global_error_handler_1.AppError("Payment screenshot is required", 404);
         }
-        let imgResult = {};
-        if (req.file) {
+        let imgResult;
+        try {
             imgResult = await cloudinary_1.default.uploader.upload(req.file.path, {
                 folder: `/orders/${email}`,
+            });
+        }
+        finally {
+            await (0, promises_1.unlink)(req.file.path).catch((err) => {
+                console.error("Failed to delete temporary screenshot:", err);
             });
         }
         const { secure_url, public_id } = imgResult;

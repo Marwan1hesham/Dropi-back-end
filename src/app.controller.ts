@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import { PORT } from "./config/config.service";
+import { PORT, FRONTEND_URL } from "./config/config.service";
 import {
   AppError,
   globalErrorHandler,
@@ -15,9 +15,16 @@ const app = express();
 const bootstrap = () => {
   app.use(express.json());
 
+  const allowedOrigins = [
+    "http://127.0.0.1:5500",
+    "http://localhost:5000",
+    "http://localhost:3000",
+    FRONTEND_URL,
+  ].filter((origin): origin is string => Boolean(origin));
+
   app.use(
     cors({
-      origin: ["http://localhost:5000", undefined!, "http://localhost:3000"],
+      origin: allowedOrigins,
     }),
   );
 

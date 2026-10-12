@@ -14,8 +14,14 @@ const order_controller_1 = __importDefault(require("./modules/orders/order.contr
 const app = (0, express_1.default)();
 const bootstrap = () => {
     app.use(express_1.default.json());
+    const allowedOrigins = [
+        "http://127.0.0.1:5500",
+        "http://localhost:5000",
+        "http://localhost:3000",
+        config_service_1.FRONTEND_URL,
+    ].filter((origin) => Boolean(origin));
     app.use((0, cors_1.default)({
-        origin: ["http://localhost:5000", undefined, "http://localhost:3000"],
+        origin: allowedOrigins,
     }));
     app.get("/", (req, res, next) => {
         res.status(200).json({ message: "Welcome to Dropi store" });

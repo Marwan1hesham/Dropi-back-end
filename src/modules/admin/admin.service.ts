@@ -11,6 +11,7 @@ import { ProductRepository } from "../../DB/repository/product.repository";
 import cloudinary from "../../common/utils/cloudinary";
 import { OrderStatusEnum } from "../../common/enum/order.enum";
 import { OrderRepository } from "../../DB/repository/order.repository";
+import { unlink } from "node:fs/promises";
 
 class AdmiService {
   private readonly _productRepo = new ProductRepository();
@@ -61,63 +62,81 @@ class AdmiService {
 
     const files = req.files as Express.Multer.File[];
 
-    const colorsWithImages = await Promise.all(
-      colors.map(async (color: { color: string }, index: number) => {
-        const mainImage = files.find(
-          (file) => file.fieldname === `main-image-${index}`,
-        );
+    try {
+      const colorsWithImages = await Promise.all(
+        colors.map(async (color: { color: string }, index: number) => {
+          const mainImage = files.find(
+            (file) => file.fieldname === `main-image-${index}`,
+          );
 
-        const subImages = files.filter(
-          (file) => file.fieldname === `sub-images-${index}`,
-        );
+          const subImages = files.filter(
+            (file) => file.fieldname === `sub-images-${index}`,
+          );
 
-        if (!mainImage) {
-          throw new AppError(`Main image is required for ${color.color}`, 400);
-        }
+          if (!mainImage) {
+            throw new AppError(
+              `Main image is required for ${color.color}`,
+              400,
+            );
+          }
 
-        const mainResult = await cloudinary.uploader.upload(mainImage.path, {
-          folder: `dropi/products/${color.color}/main`,
-        });
+          const mainResult = await cloudinary.uploader.upload(mainImage.path, {
+            folder: `dropi/products/${color.color}/main`,
+          });
 
-        const uploadedSubImages = await Promise.all(
-          subImages.map((file) =>
-            cloudinary.uploader.upload(file.path, {
-              folder: `dropi/products/${color.color}/sub`,
-            }),
-          ),
-        );
+          const uploadedSubImages = await Promise.all(
+            subImages.map((file) =>
+              cloudinary.uploader.upload(file.path, {
+                folder: `dropi/products/${color.color}/sub`,
+              }),
+            ),
+          );
 
-        return {
-          color: color.color,
+          return {
+            color: color.color,
 
-          mainImage: {
-            secure_url: mainResult.secure_url,
-            public_id: mainResult.public_id,
-          },
+            mainImage: {
+              secure_url: mainResult.secure_url,
+              public_id: mainResult.public_id,
+            },
 
-          subImages: uploadedSubImages.map(({ secure_url, public_id }) => ({
-            secure_url,
-            public_id,
-          })),
-        };
-      }),
-    );
+            subImages: uploadedSubImages.map(({ secure_url, public_id }) => ({
+              secure_url,
+              public_id,
+            })),
+          };
+        }),
+      );
 
-    const product = await this._productRepo.create({
-      name,
-      price,
-      discount,
-      category,
-      variants,
-      isFeatured,
-      colors: colorsWithImages,
-      description,
-    });
+      const product = await this._productRepo.create({
+        name,
+        price,
+        discount,
+        category,
+        variants,
+        isFeatured,
+        colors: colorsWithImages,
+        description,
+      });
 
-    return res.status(201).json({
-      message: "Done",
-      data: { product },
-    });
+      return res.status(201).json({
+        message: "Done",
+        data: { product },
+      });
+    } finally {
+      await Promise.all(
+        files.map(async (file) => {
+          if (file.path) {
+            await unlink(file.path).catch((err) => {
+              console.error(
+                `Failed to delete temporary file: ${file.path}`,
+                err,
+              );
+            });
+          }
+        }),
+      );
+    }
   };
 
   getProducts = async (req: Request, res: Response, next: NextFunction) => {
@@ -162,9 +181,13 @@ class AdmiService {
     }
 
     const updatedProduct = await this._productRepo.findOneAndUpdate({
-      filter: { productId },
+      filter: { _id: productId },
       update: updateData,
     });
+
+    if (!updatedProduct) {
+      throw new AppError("Product not found", 404);
+    }
 
     return res.status(200).json({ message: "Done", data: updatedProduct });
   };

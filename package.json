@@ -2,10 +2,11 @@
   "name": "dropi--back",
   "version": "1.0.0",
   "description": "",
-  "main": "dest/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "start:dev": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"node --watch dist/index.js\"",
-    "start:prod": "cross-env NODE_ENV=production concurrently \"tsc\" \"node dist/index.js\""
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
@@ -30,6 +31,8 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/multer": "^2.2.0"
+    "@types/multer": "^2.2.0",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
   }
 }
