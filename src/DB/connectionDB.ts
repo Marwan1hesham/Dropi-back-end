@@ -5,7 +5,7 @@ export const checkConnectionDB = async () => {
   await mongoose
     .connect(MONGODB_URI!)
     .then(() => {
-      console.log(`Connected to the DB ${MONGODB_URI} successfully`);
+      console.log(`Connected to the DB successfully`);
     })
     .catch((error) => {
       console.log(`Failed to connect to the DB`);
