@@ -64,48 +64,54 @@ class AdmiService {
 
     try {
       const colorsWithImages = await Promise.all(
-        colors.map(async (color: { color: string }, index: number) => {
-          const mainImage = files.find(
-            (file) => file.fieldname === `main-image-${index}`,
-          );
-
-          const subImages = files.filter(
-            (file) => file.fieldname === `sub-images-${index}`,
-          );
-
-          if (!mainImage) {
-            throw new AppError(
-              `Main image is required for ${color.color}`,
-              400,
+        colors.map(
+          async (
+            color: { color: string; hexCode?: string },
+            index: number,
+          ) => {
+            const mainImage = files.find(
+              (file) => file.fieldname === `main-image-${index}`,
             );
-          }
 
-          const mainResult = await cloudinary.uploader.upload(mainImage.path, {
-            folder: `dropi/products/${color.color}/main`,
-          });
+            const subImages = files.filter(
+              (file) => file.fieldname === `sub-images-${index}`,
+            );
 
-          const uploadedSubImages = await Promise.all(
-            subImages.map((file) =>
-              cloudinary.uploader.upload(file.path, {
-                folder: `dropi/products/${color.color}/sub`,
-              }),
-            ),
-          );
+            if (!mainImage) {
+              throw new AppError(
+                `Main image is required for ${color.color}`,
+                400,
+              );
+            }
 
-          return {
-            color: color.color,
+            const mainResult = await cloudinary.uploader.upload(mainImage.path, {
+              folder: `dropi/products/${color.color}/main`,
+            });
 
-            mainImage: {
-              secure_url: mainResult.secure_url,
-              public_id: mainResult.public_id,
-            },
+            const uploadedSubImages = await Promise.all(
+              subImages.map((file) =>
+                cloudinary.uploader.upload(file.path, {
+                  folder: `dropi/products/${color.color}/sub`,
+                }),
+              ),
+            );
 
-            subImages: uploadedSubImages.map(({ secure_url, public_id }) => ({
-              secure_url,
-              public_id,
-            })),
-          };
-        }),
+            return {
+              color: color.color,
+              ...(color.hexCode ? { hexCode: color.hexCode } : {}),
+
+              mainImage: {
+                secure_url: mainResult.secure_url,
+                public_id: mainResult.public_id,
+              },
+
+              subImages: uploadedSubImages.map(({ secure_url, public_id }) => ({
+                secure_url,
+                public_id,
+              })),
+            };
+          },
+        ),
       );
 
       const product = await this._productRepo.create({

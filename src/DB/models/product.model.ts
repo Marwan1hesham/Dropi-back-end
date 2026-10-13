@@ -10,6 +10,7 @@ export interface IProduct {
   category: string;
   colors: {
     color: string;
+    hexCode?: string;
 
     mainImage: {
       secure_url: string;
@@ -55,6 +56,9 @@ const ProductSchema = new mongoose.Schema<IProduct>(
     colors: [
       {
         color: {
+          type: String,
+        },
+        hexCode: {
           type: String,
         },
         mainImage: {

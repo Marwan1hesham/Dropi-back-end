@@ -30,6 +30,9 @@ const ProductSchema = new mongoose_1.default.Schema({
             color: {
                 type: String,
             },
+            hexCode: {
+                type: String,
+            },
             mainImage: {
                 secure_url: { type: String, required: true },
                 public_id: { type: String, required: true },

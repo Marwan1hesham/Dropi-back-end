@@ -50,6 +50,7 @@ class AdmiService {
                 })));
                 return {
                     color: color.color,
+                    ...(color.hexCode ? { hexCode: color.hexCode } : {}),
                     mainImage: {
                         secure_url: mainResult.secure_url,
                         public_id: mainResult.public_id,
